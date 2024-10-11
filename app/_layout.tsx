@@ -1,9 +1,12 @@
-import { Stack } from "expo-router";
+import { Stack } from 'expo-router';
 
-export default function RootLayout() {
+export default function Layout() {
   return (
-    <Stack>
-      <Stack.Screen name="index" />
-    </Stack>
+    <Stack
+      initialRouteName="screens/SignIn"
+      screenOptions={{
+        headerShown: false, // This hides the header showing the route name
+      }}
+    />
   );
 }
