@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from '../types';
 
-type SignUpScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SignUp'>;
+type UpdateProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'UpdateProfile'>;
 
 interface FormState {
   username: string;
@@ -19,8 +20,8 @@ interface FormState {
   password: string;
 }
 
-export default function SignUpScreen() {
-  const navigation = useNavigation<SignUpScreenNavigationProp>();
+export default function UpdateProfileScreen() {
+  const navigation = useNavigation<UpdateProfileScreenNavigationProp>();
   const [form, setForm] = useState<FormState>({
     username: '',
     first_name: '',
@@ -32,24 +33,57 @@ export default function SignUpScreen() {
     address: '',
     password: '',
   });
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          setUserId(parsedUser.id);
+          setForm({
+            username: parsedUser.username,
+            first_name: parsedUser.first_name,
+            last_name: parsedUser.last_name,
+            email: parsedUser.email,
+            is_driver: parsedUser.is_driver,
+            phone_number: parsedUser.phone_number,
+            nid_passport: parsedUser.nid_passport,
+            address: parsedUser.address,
+            password: '', // Password should be updated separately for security reasons
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load user data', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handleInputChange = (name: keyof FormState, value: string | boolean) => {
     setForm({ ...form, [name]: value });
   };
 
-  const handleSignUp = async () => {
+  const handleUpdateProfile = async () => {
+    if (!userId) {
+      alert('User ID not found');
+      return;
+    }
+
     try {
-      await axios.post('https://carpooling-be.onrender.com/api/users/', form);
-      navigation.navigate('SignIn');
+      await axios.put(`https://carpooling-be.onrender.com/api/users/${userId}/`, form);
+      alert('Profile updated successfully');
+      navigation.navigate('Profile');
     } catch (error) {
-      alert('Error signing up, please try again');
+      alert('Error updating profile, please try again');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create an Account</Text>
-      <Text style={styles.subtitle}>Join us and start your journey</Text>
+      <Text style={styles.title}>Update Your Profile</Text>
       {Object.keys(form).map((key) => {
         if (key === 'is_driver') {
           return (
@@ -73,8 +107,8 @@ export default function SignUpScreen() {
           />
         );
       })}
-      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-        <Text style={styles.buttonText}>Sign Up</Text>
+      <TouchableOpacity style={styles.button} onPress={handleUpdateProfile}>
+        <Text style={styles.buttonText}>Update Profile</Text>
       </TouchableOpacity>
     </View>
   );
@@ -83,7 +117,6 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#f0f4f8' },
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 10, color: '#333' },
-  subtitle: { fontSize: 16, marginBottom: 20, color: '#666' },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
@@ -109,4 +142,3 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });
-
