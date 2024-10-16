@@ -1,34 +1,63 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../types';
-
-type RequestRideScreenNavigationProp = StackNavigationProp<RootStackParamList, 'RequestRide'>;
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Link } from 'expo-router';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RequestRideScreen() {
-  const navigation = useNavigation<RequestRideScreenNavigationProp>();
+  const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [numPersons, setNumPersons] = useState('');
 
-  const handleRequestRide = () => {
-    // Implement ride request functionality here
-    alert('Ride requested successfully');
+  const handleRequestRide = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('user');
+      if (!userData) {
+        Alert.alert('Error', 'User not logged in');
+        return;
+      }
+
+      const { username } = JSON.parse(userData);
+
+      const rideRequest = {
+        passenger : username,
+        origin,
+        destination,
+        num_persons: Number(numPersons),
+      };
+
+      // Make the API call to create a ride request
+      await axios.post('https://carpooling-be.onrender.com/api/rides/', rideRequest);
+      Alert.alert('Success', 'Ride requested successfully');
+      // Optionally reset form fields
+      setOrigin('');
+      setDestination('');
+      setNumPersons('');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to request ride, please try again');
+      console.error('Error requesting ride:', error);
+    }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Request a Ride</Text>
-        <TouchableOpacity style={styles.viewProfileButton} onPress={() => navigation.navigate('Profile')}>
+        <Link href="/Profile" style={styles.viewProfileButton}>
           <Text style={styles.viewProfileText}>View Profile</Text>
-        </TouchableOpacity>
+        </Link>
       </View>
+      <TextInput
+        placeholder="Where are you?"
+        value={origin}
+        onChangeText={setOrigin}
+        style={[styles.input, styles.firstInput]} // Apply additional styles to the first input
+      />
       <TextInput
         placeholder="Where do you want to go?"
         value={destination}
         onChangeText={setDestination}
-        style={[styles.input, styles.firstInput]} // Apply additional styles to the first input
+        style={styles.input}
       />
       <TextInput
         placeholder="Number of persons"

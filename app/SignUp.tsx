@@ -1,12 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Switch } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import React, { useState } from 'react';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { Link } from 'expo-router';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { RootStackParamList } from '../types';
-
-type UpdateProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'UpdateProfile'>;
 
 interface FormState {
   username: string;
@@ -20,8 +15,7 @@ interface FormState {
   password: string;
 }
 
-export default function UpdateProfileScreen() {
-  const navigation = useNavigation<UpdateProfileScreenNavigationProp>();
+export default function SignUpScreen() {
   const [form, setForm] = useState<FormState>({
     username: '',
     first_name: '',
@@ -33,57 +27,24 @@ export default function UpdateProfileScreen() {
     address: '',
     password: '',
   });
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userData = await AsyncStorage.getItem('user');
-        if (userData) {
-          const parsedUser = JSON.parse(userData);
-          setUserId(parsedUser.id);
-          setForm({
-            username: parsedUser.username,
-            first_name: parsedUser.first_name,
-            last_name: parsedUser.last_name,
-            email: parsedUser.email,
-            is_driver: parsedUser.is_driver,
-            phone_number: parsedUser.phone_number,
-            nid_passport: parsedUser.nid_passport,
-            address: parsedUser.address,
-            password: '', // Password should be updated separately for security reasons
-          });
-        }
-      } catch (error) {
-        console.error('Failed to load user data', error);
-      }
-    };
-
-    fetchUserData();
-  }, []);
 
   const handleInputChange = (name: keyof FormState, value: string | boolean) => {
     setForm({ ...form, [name]: value });
   };
 
-  const handleUpdateProfile = async () => {
-    if (!userId) {
-      alert('User ID not found');
-      return;
-    }
-
+  const handleSignUp = async () => {
     try {
-      await axios.put(`https://carpooling-be.onrender.com/api/users/${userId}/`, form);
-      alert('Profile updated successfully');
-      navigation.navigate('Profile');
+      await axios.post('https://carpooling-be.onrender.com/api/users/', form);
+      // Use router.push('/SignIn') if you want programmatic navigation after signup
     } catch (error) {
-      alert('Error updating profile, please try again');
+      alert('Error signing up, please try again');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Update Your Profile</Text>
+      <Text style={styles.title}>Create an Account</Text>
+      <Text style={styles.subtitle}>Join us and start your journey</Text>
       {Object.keys(form).map((key) => {
         if (key === 'is_driver') {
           return (
@@ -107,9 +68,12 @@ export default function UpdateProfileScreen() {
           />
         );
       })}
-      <TouchableOpacity style={styles.button} onPress={handleUpdateProfile}>
-        <Text style={styles.buttonText}>Update Profile</Text>
+      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+        <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
+      <Link href="/SignIn" style={styles.link}>
+        Already have an account? <Text style={styles.linkBold}>Sign In</Text>
+      </Link>
     </View>
   );
 }
@@ -117,6 +81,7 @@ export default function UpdateProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#f0f4f8' },
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 10, color: '#333' },
+  subtitle: { fontSize: 16, marginBottom: 20, color: '#666' },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
@@ -141,4 +106,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  link: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 14,
+    color: '#007BFF',
+  },
+  linkBold: {
+    fontWeight: 'bold',
+  },
 });

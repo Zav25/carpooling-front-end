@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { View, Text, TextInput, Button, StyleSheet, Image } from 'react-native';
+import { Link, useRouter } from 'expo-router'; // Import useRouter
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { RootStackParamList } from '../types';
-
-type SignInScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SignIn'>;
 
 export default function SignInScreen() {
-  const navigation = useNavigation<SignInScreenNavigationProp>();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const router = useRouter(); // Initialize the router
 
   const handleSignIn = async () => {
     try {
@@ -22,7 +18,7 @@ export default function SignInScreen() {
       // Save user data to local storage
       await AsyncStorage.setItem('user', JSON.stringify(response.data));
       // Navigate to the RequestRide screen
-      navigation.navigate('RequestRide');
+      router.push('/RequestRide'); // Use router.push for navigation
     } catch (error) {
       alert('Invalid username or password');
     }
@@ -30,7 +26,7 @@ export default function SignInScreen() {
 
   return (
     <View style={styles.container}>
-      <Image source={require('../../assets/images/carpooling-cover.png')} style={styles.image} />
+      <Image source={require('../assets/images/carpooling-cover.png')} style={styles.image} />
       <Text style={styles.title}>Sign In</Text>
       <TextInput
         placeholder="Username"
@@ -48,11 +44,9 @@ export default function SignInScreen() {
       <View style={styles.buttonContainer}>
         <Button title="Sign In" onPress={handleSignIn} />
       </View>
-      <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-        <Text style={styles.link}>
-          Don't have an account? <Text style={styles.linkBold}>Sign Up</Text>
-        </Text>
-      </TouchableOpacity>
+      <Link href="/SignUp" style={styles.link}>
+        Don't have an account? <Text style={styles.linkBold}>Sign Up</Text>
+      </Link>
     </View>
   );
 }
@@ -77,4 +71,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-

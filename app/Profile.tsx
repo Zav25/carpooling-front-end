@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../types';
-
-type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
+import { Link } from 'expo-router';
 
 const ProfileScreen: React.FC = () => {
-  const navigation = useNavigation<ProfileScreenNavigationProp>();
   const [user, setUser] = useState<any>(null);
   const [rideHistory, setRideHistory] = useState<any[]>([]);
 
@@ -44,14 +39,10 @@ const ProfileScreen: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await AsyncStorage.removeItem('user');
-      navigation.navigate('SignIn');
+      // Navigate to sign-in screen after sign out
     } catch (error) {
       console.error('Failed to sign out', error);
     }
-  };
-
-  const handleUpdateProfile = () => {
-    navigation.navigate('UpdateProfile');
   };
 
   if (!user) {
@@ -60,7 +51,7 @@ const ProfileScreen: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Image source={require('../../assets/images/user.png')} style={styles.avatar} />
+      <Image source={require('../assets/images/user.png')} style={styles.avatar} />
       <Text style={styles.username}>{user.username}</Text>
       <Text style={styles.name}>{user.first_name} {user.last_name}</Text>
       <Text style={styles.email}>Email : {user.email}</Text>
@@ -68,8 +59,12 @@ const ProfileScreen: React.FC = () => {
       <Text style={styles.info}>Address: {user.address}</Text>
       <Text style={styles.info}>NID/Passport: {user.nid_passport}</Text>
       <View style={styles.buttonRow}>
-        <Button title="Update Profile" onPress={handleUpdateProfile} color="#007BFF" />
-        <Button title="Sign Out" onPress={handleSignOut} color="#FF6347" />
+        <Link href="/UpdateProfile" style={styles.linkButton}>
+          <Text style={styles.linkButtonText}>Update Profile</Text>
+        </Link>
+        <Link href="/SignIn" onPress={handleSignOut} style={styles.linkButton}>
+          <Text style={styles.linkButtonText}>Logout</Text>
+        </Link>
       </View>
       <Text style={styles.sectionTitle}>Ride History</Text>
       <View style={styles.table}>
@@ -116,6 +111,16 @@ const styles = StyleSheet.create({
   tableHeaderText: { fontWeight: 'bold', flex: 1, textAlign: 'center', color: '#555' },
   tableRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 10 },
   tableCell: { flex: 1, textAlign: 'center', color: '#555' },
+  linkButton: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  linkButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
 });
 
 export default ProfileScreen;
