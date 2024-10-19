@@ -105,8 +105,10 @@ const ProfileScreen: React.FC = () => {
   const handleCompleteRide = async () => {
     if (selectedRide) {
       try {
+        const currentTime = new Date().toISOString(); // Get current time in ISO format
         await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}`, {
           status: 'completed', // Change the status to completed
+          end_time: currentTime, // Include the current time as end_time
         });
         fetchRideHistory(user?.username || ''); // Refresh ride history
         handleCloseDetails(); // Close details view
@@ -115,6 +117,7 @@ const ProfileScreen: React.FC = () => {
       }
     }
   };
+  
 
   if (!user) {
     return <Text>Loading...</Text>;
