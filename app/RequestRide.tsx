@@ -3,11 +3,14 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image, Scro
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import IconContainer from '../components/IconContainer'; // Adjust the import path as needed
+import { useRouter } from 'expo-router';
 
 export default function RequestRideScreen() {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [numPersons, setNumPersons] = useState('');
+
+  const router = useRouter();
 
   const handleRequestRide = async () => {
     try {
@@ -33,6 +36,8 @@ export default function RequestRideScreen() {
       setOrigin('');
       setDestination('');
       setNumPersons('');
+
+      router.push('/Profile');
     } catch (error) {
       Alert.alert('Error', 'Failed to request ride, please try again');
       console.error('Error requesting ride:', error);

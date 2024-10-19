@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Switch } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import axios from 'axios';
 
 interface FormState {
@@ -32,10 +32,12 @@ export default function SignUpScreen() {
     setForm({ ...form, [name]: value });
   };
 
+  const router = useRouter();
+
   const handleSignUp = async () => {
     try {
       await axios.post('https://carpooling-be.onrender.com/api/users/', form);
-      // Use router.push('/SignIn') if you want programmatic navigation after signup
+      router.push('/SignIn');
     } catch (error) {
       alert('Error signing up, please try again');
     }

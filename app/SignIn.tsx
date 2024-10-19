@@ -18,7 +18,11 @@ export default function SignInScreen() {
       // Save user data to local storage
       await AsyncStorage.setItem('user', JSON.stringify(response.data));
       // Navigate to the RequestRide screen
-      router.push('/RequestRide'); // Use router.push for navigation
+      if(response.data.is_driver === true){
+        router.push('/PendingRides');
+      }else {
+        router.push('/RequestRide');
+      }
     } catch (error) {
       alert('Invalid username or password');
     }
