@@ -56,7 +56,7 @@ export default function FareChartScreen() {
           </Text>
         </View>
       </ScrollView>
-      <IconContainer /> {/* Include the IconContainer for navigation */}
+      <IconContainer />
     </View>
   );
 }

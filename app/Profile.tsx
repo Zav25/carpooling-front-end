@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Button } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Link } from 'expo-router';
 import IconContainer from '../components/IconContainer'; // Import the IconContainer
@@ -13,50 +13,63 @@ interface Ride {
   driver: string | null;
   passenger: string | null;
   price: number; // or string, depending on your API response
-  status: 'pending' | 'active' | 'completed'; // Adjust as necessary
+  status: 'pending' | 'active' | 'completed' | 'canceled'; // Adjust as necessary
   start_time: string; // Adjust based on your API response
   end_time: string; // Adjust based on your API response
 }
 
+// Define the User interface
+interface User {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  address: string;
+  nid_passport: string;
+}
+
 const ProfileScreen: React.FC = () => {
-  const [user, setUser] = useState<any>(null);
-  const [rideHistory, setRideHistory] = useState<Ride[]>([]); // Use the Ride type for rideHistory
+  const [user, setUser] = useState<User | null>(null); // Use User interface
   const [pendingRides, setPendingRides] = useState<Ride[]>([]);
   const [activeRides, setActiveRides] = useState<Ride[]>([]);
   const [completedRides, setCompletedRides] = useState<Ride[]>([]);
+  const [selectedRide, setSelectedRide] = useState<Ride | null>(null); // State for selected ride
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const userData = await AsyncStorage.getItem('user');
         if (userData) {
-          setUser(JSON.parse(userData));
+          const parsedUser: User = JSON.parse(userData); // Parse user data
+          setUser(parsedUser);
+          fetchRideHistory(parsedUser.username); // Fetch rides after setting user
         }
       } catch (error) {
         console.error('Failed to load user data', error);
       }
     };
 
-    const fetchRideHistory = async () => {
-      try {
-        const response = await axios.get('https://carpooling-be.onrender.com/api/rides/');
-        const rides: Ride[] = response.data; // Specify the rides type
-
-        // Filter rides based on user's username
-        const userRides = rides.filter(ride => ride.driver === user?.username || ride.passenger === user?.username);
-
-        // Categorize rides
-        setPendingRides(userRides.filter(ride => ride.status === 'pending'));
-        setActiveRides(userRides.filter(ride => ride.status === 'active'));
-        setCompletedRides(userRides.filter(ride => ride.status === 'completed'));
-      } catch (error) {
-        console.error('Failed to load ride history', error);
-      }
-    };
-
     fetchUserData();
-    fetchRideHistory();
-  }, [user?.username]); // Re-fetch rides when username changes
+  }, []);
+
+  const fetchRideHistory = async (username: string) => {
+    if (!username) return; // Prevent fetching if username is not available
+
+    try {
+      const response = await axios.get('https://carpooling-be.onrender.com/api/rides/');
+      const rides: Ride[] = response.data;
+
+      const userRides = rides.filter(ride => ride.driver === username || ride.passenger === username);
+      
+      setPendingRides(userRides.filter(ride => ride.status === 'pending'));
+      setActiveRides(userRides.filter(ride => ride.status === 'active'));
+      setCompletedRides(userRides.filter(ride => ride.status === 'completed'));
+    } catch (error) {
+      console.error('Failed to load ride history', error);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -67,13 +80,40 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
-  // Specify the ride parameter type in the function signature
   const handleRidePress = (ride: Ride) => {
-    Alert.alert(
-      'Ride Details',
-      `ID: ${ride.id}\nOrigin: ${ride.origin}\nDestination: ${ride.destination}\nPrice: ${ride.price}\nStatus: ${ride.status}\nStart Time: ${ride.start_time}\nEnd Time: ${ride.end_time}`,
-      [{ text: 'OK' }]
-    );
+    setSelectedRide(ride); // Set the selected ride to show its details
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedRide(null); // Close the ride details view
+  };
+
+  const handleCancelRide = async () => {
+    if (selectedRide) {
+      try {
+        await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}`, {
+          status: 'canceled', // Change the status to cancelled
+        });
+        fetchRideHistory(user?.username || ''); // Refresh ride history
+        handleCloseDetails(); // Close details view
+      } catch (error) {
+        console.error('Failed to cancel ride', error);
+      }
+    }
+  };
+
+  const handleCompleteRide = async () => {
+    if (selectedRide) {
+      try {
+        await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}`, {
+          status: 'completed', // Change the status to completed
+        });
+        fetchRideHistory(user?.username || ''); // Refresh ride history
+        handleCloseDetails(); // Close details view
+      } catch (error) {
+        console.error('Failed to complete ride', error);
+      }
+    }
   };
 
   if (!user) {
@@ -90,6 +130,7 @@ const ProfileScreen: React.FC = () => {
         <Text style={styles.info}>Phone: {user.phone_number}</Text>
         <Text style={styles.info}>Address: {user.address}</Text>
         <Text style={styles.info}>NID/Passport: {user.nid_passport}</Text>
+        
         <View style={styles.buttonRow}>
           <Link href="/UpdateProfile" style={styles.linkButton}>
             <Text style={styles.linkButtonText}>Update Profile</Text>
@@ -101,7 +142,6 @@ const ProfileScreen: React.FC = () => {
 
         <Text style={styles.sectionTitle}>Ride History</Text>
 
-        {/* Render Pending Rides */}
         <Text style={styles.subSectionTitle}>Pending Rides</Text>
         {pendingRides.map(ride => (
           <TouchableOpacity key={ride.id} style={styles.rideItem} onPress={() => handleRidePress(ride)}>
@@ -112,7 +152,6 @@ const ProfileScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
 
-        {/* Render Active Rides */}
         <Text style={styles.subSectionTitle}>Active Rides</Text>
         {activeRides.map(ride => (
           <TouchableOpacity key={ride.id} style={styles.rideItem} onPress={() => handleRidePress(ride)}>
@@ -123,7 +162,6 @@ const ProfileScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
 
-        {/* Render Completed Rides */}
         <Text style={styles.subSectionTitle}>Completed Rides</Text>
         {completedRides.map(ride => (
           <TouchableOpacity key={ride.id} style={styles.rideItem} onPress={() => handleRidePress(ride)}>
@@ -133,8 +171,27 @@ const ProfileScreen: React.FC = () => {
             <Text>Price: {ride.price}</Text>
           </TouchableOpacity>
         ))}
+
+        {selectedRide && (
+          <View style={styles.detailsContainer}>
+            <Text style={styles.detailsTitle}>Ride Details</Text>
+            <Text>ID: {selectedRide.id}</Text>
+            <Text>Origin: {selectedRide.origin}</Text>
+            <Text>Destination: {selectedRide.destination}</Text>
+            <Text>Price: {selectedRide.price}</Text>
+            <Text>Status: {selectedRide.status}</Text>
+            <Text>Start Time: {selectedRide.start_time}</Text>
+            <Text>End Time: {selectedRide.end_time}</Text>
+
+            <View style={styles.detailsButtons}>
+              <Button title="Close" onPress={handleCloseDetails} />
+              <Button title="Cancel" onPress={handleCancelRide} />
+              <Button title="Complete" onPress={handleCompleteRide} />
+            </View>
+          </View>
+        )}
       </ScrollView>
-      <IconContainer /> {/* Add IconContainer here */}
+      <IconContainer />
     </View>
   );
 };
@@ -178,46 +235,57 @@ const styles = StyleSheet.create({
     color: '#777',
   },
   buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '80%',
-    marginTop: 20,
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    width: '100%', 
+    marginVertical: 10,
+  },
+  linkButton: { 
+    padding: 10, 
+    backgroundColor: 'rgb(228, 15, 164)', 
+    borderRadius: 5, 
+  },
+  linkButtonText: { 
+    color: '#fff', 
+    fontWeight: 'bold',
   },
   sectionTitle: { 
     fontSize: 20, 
     fontWeight: 'bold', 
-    marginTop: 30, 
-    marginBottom: 10, 
-    color: '#333',
-  },
-  subSectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
     marginTop: 20,
-    marginBottom: 5,
-    color: '#333',
   },
-  rideItem: {
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 5,
-    marginVertical: 5,
+  subSectionTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    marginTop: 15,
+  },
+  rideItem: { 
+    backgroundColor: '#fff', 
+    padding: 10, 
+    marginVertical: 5, 
+    borderRadius: 5, 
+    elevation: 2,
     width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1,
-    elevation: 1,
   },
-  linkButton: {
-    backgroundColor: '#007BFF',
-    padding: 10,
-    borderRadius: 8,
-    marginRight: 10,
+  detailsContainer: { 
+    backgroundColor: '#fff', 
+    padding: 20, 
+    borderRadius: 5, 
+    elevation: 4, 
+    position: 'absolute', 
+    top: '20%', 
+    left: '5%', 
+    right: '5%',
   },
-  linkButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  detailsTitle: { 
+    fontSize: 22, 
+    fontWeight: 'bold', 
+    marginBottom: 10,
+  },
+  detailsButtons: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    marginTop: 10,
   },
 });
 

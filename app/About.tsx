@@ -27,7 +27,6 @@ export default function AboutScreen() {
           Ready to ride with us? Let’s make every trip count!
         </Text>
 
-        {/* Cards Section */}
         <View style={styles.card}>
           <Image source={require('../assets/images/about-rain.jpeg')} style={styles.cardImage} />
           <View style={styles.cardTextContainer}>
@@ -44,7 +43,7 @@ export default function AboutScreen() {
           <Image source={require('../assets/images/about-connect.jpeg')} style={styles.cardImage} />
         </View>
       </ScrollView>
-      <IconContainer /> {/* Fixed IconContainer for navigation */}
+      <IconContainer />
     </View>
   );
 }

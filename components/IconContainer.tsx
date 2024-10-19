@@ -22,7 +22,7 @@ export default function IconContainer() {
 
   return (
     <View style={styles.fixedContainer}>
-      <View style={styles.separator} /> {/* Horizontal line above the container */}
+      <View style={styles.separator} />
       <View style={styles.container}>
         <Link href={isDriver === true ? "/PendingRides" : "/RequestRide"}>
           <Image source={require('../assets/images/icons8-home-100.png')} style={styles.icon} />
@@ -43,7 +43,7 @@ export default function IconContainer() {
 
 const styles = StyleSheet.create({
   fixedContainer: {
-    position: 'absolute',
+    position: 'relative',
     bottom: 0,
     width: '100%',
     backgroundColor: '#fff',
@@ -56,11 +56,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 0,
+    paddingHorizontal: 30,
+    marginBottom: 20,
   },
   icon: {
-    width: 40,
-    height: 40,
+    width: 50,
+    height: 50,
   },
 });
