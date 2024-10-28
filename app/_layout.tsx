@@ -21,6 +21,8 @@ export default function RootLayout() {
       <Stack.Screen name="About" />
       <Stack.Screen name="FareChart" />
       <Stack.Screen name="PendingRides" />
+      <Stack.Screen name='PostRide' />
+      <Stack.Screen name='PostedRides' />
     </Stack>
   );
 }

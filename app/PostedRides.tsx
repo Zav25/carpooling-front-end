@@ -1,22 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Button, StyleSheet } from 'react-native';
+import { View, Text, FlatList, Button, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import IconContainer from '@/components/IconContainer';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 interface Ride {
   id: number;
   origin: string;
   destination: string;
   num_persons: number;
-  start_time: string;
-  end_time: string;
-  driver: string | null;
+  passenger: string | null;
   status: string;
 }
 
-export default function PendingRides() {
+export default function PostedRides() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [username, setUsername] = useState<string | null>(null);
   const router = useRouter();
@@ -37,8 +35,10 @@ export default function PendingRides() {
   useEffect(() => {
     axios.get('https://carpooling-be.onrender.com/api/rides/')
       .then(response => {
-        const pendingRides = response.data.filter((ride: Ride) => ride.status === 'pending');
-        setRides(pendingRides);
+        const availableRides = response.data.filter(
+          (ride: Ride) => ride.status === 'pending' && ride.passenger === null
+        );
+        setRides(availableRides);
       })
       .catch(error => {
         console.error('Error fetching rides:', error);
@@ -47,15 +47,15 @@ export default function PendingRides() {
 
   const handleTakeRide = (rideId: number) => {
     if (!username) {
-      console.error('Driver username not found.');
+      Alert.alert('Error', 'User not logged in');
       return;
     }
 
     const currentTime = new Date().toISOString();
-    axios.patch(`https://carpooling-be.onrender.com/api/rides/${rideId}/`, { 
-      status: 'active', 
-      driver: username, 
-      start_time: currentTime 
+    axios.patch(`https://carpooling-be.onrender.com/api/rides/${rideId}/`, {
+      passenger: username,
+      status: 'active',
+      start_time: currentTime,
     })
       .then(() => {
         setRides(prevRides => prevRides.filter(ride => ride.id !== rideId));
@@ -63,6 +63,7 @@ export default function PendingRides() {
       })
       .catch(error => {
         console.error('Error taking the ride:', error);
+        Alert.alert('Error', 'Failed to take the ride, please try again');
       });
   };
 
@@ -77,18 +78,13 @@ export default function PendingRides() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Requested Rides</Text>
+      <Text style={styles.title}>Posted Rides</Text>
       <FlatList
         data={rides}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.flatListContent}
       />
-      
-      <Link href="/PostRide" style={styles.postRideButton}>
-        <Text style={styles.postRideButtonText}>Post a Ride</Text>
-      </Link>
-      
       <IconContainer />
     </View>
   );
@@ -99,6 +95,4 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
   rideContainer: { marginBottom: 20, padding: 10, backgroundColor: '#f0f0f0', borderRadius: 5 },
   flatListContent: { paddingBottom: 80 },
-  postRideButton: { marginVertical: 20, padding: 10, backgroundColor: '#007bff', borderRadius: 5 },
-  postRideButtonText: { color: '#fff', fontWeight: 'bold', textAlign: 'center' },
 });

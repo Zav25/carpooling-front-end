@@ -1,74 +1,75 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import IconContainer from '../components/IconContainer';
-import { useRouter, Link } from 'expo-router';
+import IconContainer from '../components/IconContainer'; // Adjust the import path as needed
+import { useRouter } from 'expo-router';
 
-export default function RequestRideScreen() {
+export default function PostRide() {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
-  const [numPersons, setNumPersons] = useState('');
+  const [capacity, setCapacity] = useState('');
+
   const router = useRouter();
 
-  const handleRequestRide = async () => {
+  const handlePostRide = async () => {
     try {
       const userData = await AsyncStorage.getItem('user');
       if (!userData) {
         Alert.alert('Error', 'User not logged in');
         return;
       }
+
       const { username } = JSON.parse(userData);
 
-      const rideRequest = {
-        passenger: username,
+      const newRide = {
+        driver: username,
         origin,
         destination,
-        num_persons: Number(numPersons),
+        num_persons: Number(capacity),
       };
 
-      await axios.post('https://carpooling-be.onrender.com/api/rides/', rideRequest);
-      Alert.alert('Success', 'Ride requested successfully');
+      // Make the API call to create a new ride
+      await axios.post('https://carpooling-be.onrender.com/api/rides/', newRide);
+      Alert.alert('Success', 'Ride posted successfully');
+      // Optionally reset form fields
       setOrigin('');
       setDestination('');
-      setNumPersons('');
+      setCapacity('');
+
       router.push('/Profile');
     } catch (error) {
-      Alert.alert('Error', 'Failed to request ride, please try again');
-      console.error('Error requesting ride:', error);
+      Alert.alert('Error', 'Failed to post ride, please try again');
+      console.error('Error posting ride:', error);
     }
   };
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <Image source={require('../assets/images/carpooling-cover.png')} style={styles.coverImage} />
-        <Text style={styles.title}>Request a Ride</Text>
+        <Text style={styles.title}>Post a Ride</Text>
         <TextInput
-          placeholder="Where are you?"
+          placeholder="Starting location"
           value={origin}
           onChangeText={setOrigin}
           style={[styles.input, styles.firstInput]}
         />
         <TextInput
-          placeholder="Where do you want to go?"
+          placeholder="Destination"
           value={destination}
           onChangeText={setDestination}
           style={styles.input}
         />
         <TextInput
-          placeholder="Number of persons"
-          value={numPersons}
-          onChangeText={setNumPersons}
+          placeholder="Capacity"
+          value={capacity}
+          onChangeText={setCapacity}
           style={styles.input}
           keyboardType="numeric"
         />
-        <TouchableOpacity style={[styles.letsGoButton, styles.letsGoButtonMargin]} onPress={handleRequestRide}>
-          <Text style={styles.letsGoText}>Let's Go</Text>
+        <TouchableOpacity style={[styles.postRideButton, styles.postRideButtonMargin]} onPress={handlePostRide}>
+          <Text style={styles.postRideText}>Post Ride</Text>
         </TouchableOpacity>
-        <Link href="/PostedRides" style={styles.viewPostedRidesButton}>
-          <Text style={styles.viewPostedRidesText}>View Posted Rides</Text>
-        </Link>
       </ScrollView>
       <IconContainer />
     </View>
@@ -85,17 +86,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: 'center',
   },
-  coverImage: {
-    width: '100%',
-    height: 200,
-    borderWidth: 2,
-    borderColor: 'black',
-    marginBottom: 20,
-  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 20,
   },
   input: {
     borderWidth: 1,
@@ -107,27 +101,19 @@ const styles = StyleSheet.create({
   firstInput: {
     marginTop: 20,
   },
-  letsGoButton: {
-    backgroundColor: '#28a745',
+  postRideButton: {
+    backgroundColor: '#007bff',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
     alignItems: 'center',
     alignSelf: 'center',
   },
-  letsGoButtonMargin: {
+  postRideButtonMargin: {
     marginTop: 20,
   },
-  letsGoText: {
+  postRideText: {
     color: 'white',
     fontSize: 14,
-  },
-  viewPostedRidesButton: {
-    marginTop: 20,
-    alignSelf: 'center',
-  },
-  viewPostedRidesText: {
-    color: '#007bff',
-    fontSize: 16,
   },
 });

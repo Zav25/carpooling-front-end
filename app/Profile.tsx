@@ -35,6 +35,7 @@ const ProfileScreen: React.FC = () => {
   const [pendingRides, setPendingRides] = useState<Ride[]>([]);
   const [activeRides, setActiveRides] = useState<Ride[]>([]);
   const [completedRides, setCompletedRides] = useState<Ride[]>([]);
+  const [canceledRides, setCanceledRides] = useState<Ride[]>([]);
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null); // State for selected ride
 
   useEffect(() => {
@@ -62,10 +63,11 @@ const ProfileScreen: React.FC = () => {
       const rides: Ride[] = response.data;
 
       const userRides = rides.filter(ride => ride.driver === username || ride.passenger === username);
-      
+
       setPendingRides(userRides.filter(ride => ride.status === 'pending'));
       setActiveRides(userRides.filter(ride => ride.status === 'active'));
       setCompletedRides(userRides.filter(ride => ride.status === 'completed'));
+      setCanceledRides(userRides.filter(ride => ride.status === 'canceled'));
     } catch (error) {
       console.error('Failed to load ride history', error);
     }
@@ -91,7 +93,7 @@ const ProfileScreen: React.FC = () => {
   const handleCancelRide = async () => {
     if (selectedRide) {
       try {
-        await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}`, {
+        await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}/`, {
           status: 'canceled', // Change the status to cancelled
         });
         fetchRideHistory(user?.username || ''); // Refresh ride history
@@ -106,7 +108,7 @@ const ProfileScreen: React.FC = () => {
     if (selectedRide) {
       try {
         const currentTime = new Date().toISOString(); // Get current time in ISO format
-        await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}`, {
+        await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}/`, {
           status: 'completed', // Change the status to completed
           end_time: currentTime, // Include the current time as end_time
         });
@@ -117,7 +119,7 @@ const ProfileScreen: React.FC = () => {
       }
     }
   };
-  
+
 
   if (!user) {
     return <Text>Loading...</Text>;
@@ -133,7 +135,7 @@ const ProfileScreen: React.FC = () => {
         <Text style={styles.info}>Phone: {user.phone_number}</Text>
         <Text style={styles.info}>Address: {user.address}</Text>
         <Text style={styles.info}>NID/Passport: {user.nid_passport}</Text>
-        
+
         <View style={styles.buttonRow}>
           <Link href="/UpdateProfile" style={styles.linkButton}>
             <Text style={styles.linkButtonText}>Update Profile</Text>
@@ -175,6 +177,16 @@ const ProfileScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
 
+        <Text style={styles.subSectionTitle}>Canceled Rides</Text>
+        {canceledRides.map(ride => (
+          <TouchableOpacity key={ride.id} style={styles.rideItem} onPress={() => handleRidePress(ride)}>
+            <Text>ID: {ride.id}</Text>
+            <Text>Origin: {ride.origin}</Text>
+            <Text>Destination: {ride.destination}</Text>
+            <Text>Price: {ride.price}</Text>
+          </TouchableOpacity>
+        ))}
+
         {selectedRide && (
           <View style={styles.detailsContainer}>
             <Text style={styles.detailsTitle}>Ride Details</Text>
@@ -204,90 +216,90 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9F9F9',
   },
-  container: { 
-    flexGrow: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
-  avatar: { 
-    width: 100, 
-    height: 100, 
-    borderRadius: 50, 
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     marginBottom: 20,
   },
-  username: { 
-    fontSize: 14, 
-    marginBottom: 20, 
+  username: {
+    fontSize: 14,
+    marginBottom: 20,
     color: 'rgb(228, 15, 164)',
   },
-  name: { 
-    fontSize: 22, 
-    fontWeight: 'bold', 
-    marginBottom: 10, 
+  name: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
     color: '#333',
   },
-  email: { 
-    fontSize: 16, 
-    marginBottom: 5, 
+  email: {
+    fontSize: 16,
+    marginBottom: 5,
     color: '#555',
   },
-  info: { 
-    fontSize: 16, 
-    marginBottom: 5, 
+  info: {
+    fontSize: 16,
+    marginBottom: 5,
     color: '#777',
   },
   buttonRow: {
-    flexDirection: 'row', 
-    justifyContent: 'space-around', 
-    width: '100%', 
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
     marginVertical: 10,
   },
-  linkButton: { 
-    padding: 10, 
-    backgroundColor: 'rgb(228, 15, 164)', 
-    borderRadius: 5, 
+  linkButton: {
+    padding: 10,
+    backgroundColor: 'rgb(228, 15, 164)',
+    borderRadius: 5,
   },
-  linkButtonText: { 
-    color: '#fff', 
+  linkButtonText: {
+    color: '#fff',
     fontWeight: 'bold',
   },
-  sectionTitle: { 
-    fontSize: 20, 
-    fontWeight: 'bold', 
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
     marginTop: 20,
   },
-  subSectionTitle: { 
-    fontSize: 18, 
-    fontWeight: 'bold', 
+  subSectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
     marginTop: 15,
   },
-  rideItem: { 
-    backgroundColor: '#fff', 
-    padding: 10, 
-    marginVertical: 5, 
-    borderRadius: 5, 
+  rideItem: {
+    backgroundColor: '#fff',
+    padding: 10,
+    marginVertical: 5,
+    borderRadius: 5,
     elevation: 2,
     width: '100%',
   },
-  detailsContainer: { 
-    backgroundColor: '#fff', 
-    padding: 20, 
-    borderRadius: 5, 
-    elevation: 4, 
-    position: 'absolute', 
-    top: '20%', 
-    left: '5%', 
+  detailsContainer: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 5,
+    elevation: 4,
+    position: 'absolute',
+    top: '20%',
+    left: '5%',
     right: '5%',
   },
-  detailsTitle: { 
-    fontSize: 22, 
-    fontWeight: 'bold', 
+  detailsTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
     marginBottom: 10,
   },
-  detailsButtons: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-around', 
+  detailsButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     marginTop: 10,
   },
 });
