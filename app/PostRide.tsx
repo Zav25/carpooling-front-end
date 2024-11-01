@@ -3,11 +3,14 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ScrollView 
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import IconContainer from '../components/IconContainer'; // Adjust the import path as needed
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
+import MapScreen from '@/components/MapScreen';
 
 export default function PostRide() {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
+  const [from, setFrom] = useState({ latitude: 23.7368, longitude: 90.3965 }); // Shahbag, Dhaka
+  const [to, setTo] = useState({ latitude: 23.7935, longitude: 90.4066 }); // Banani, Dhaka
   const [capacity, setCapacity] = useState('');
 
   const router = useRouter();
@@ -48,6 +51,10 @@ export default function PostRide() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
         <Text style={styles.title}>Post a Ride</Text>
+        <MapScreen
+          origin={from}
+          destination={to} 
+        />
         <TextInput
           placeholder="Starting location"
           value={origin}
@@ -70,6 +77,10 @@ export default function PostRide() {
         <TouchableOpacity style={[styles.postRideButton, styles.postRideButtonMargin]} onPress={handlePostRide}>
           <Text style={styles.postRideText}>Post Ride</Text>
         </TouchableOpacity>
+
+        <Link href="/PendingRides" style={styles.viewPostedRidesButton}>
+          <Text style={styles.viewPostedRidesText}>View Requested Rides</Text>
+        </Link>
       </ScrollView>
       <IconContainer />
     </View>
@@ -115,5 +126,13 @@ const styles = StyleSheet.create({
   postRideText: {
     color: 'white',
     fontSize: 14,
+  },
+  viewPostedRidesButton: {
+    marginTop: 20,
+    alignSelf: 'center',
+  },
+  viewPostedRidesText: {
+    color: '#007bff',
+    fontSize: 16,
   },
 });

@@ -4,10 +4,13 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import IconContainer from '../components/IconContainer';
 import { useRouter, Link } from 'expo-router';
+import MapScreen from '../components/MapScreen';
 
 export default function RequestRideScreen() {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
+  const [from, setFrom] = useState({ latitude: 23.7368, longitude: 90.3965 }); // Shahbag, Dhaka
+  const [to, setTo] = useState({ latitude: 23.7935, longitude: 90.4066 }); // Banani, Dhaka
   const [numPersons, setNumPersons] = useState('');
   const router = useRouter();
 
@@ -42,8 +45,11 @@ export default function RequestRideScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <Image source={require('../assets/images/carpooling-cover.png')} style={styles.coverImage} />
         <Text style={styles.title}>Request a Ride</Text>
+        <MapScreen
+          origin={from}
+          destination={to} 
+        />
         <TextInput
           placeholder="Where are you?"
           value={origin}
