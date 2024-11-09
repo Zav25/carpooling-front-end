@@ -205,24 +205,66 @@ const ProfileScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
 
-        {selectedRide && (
-          <View style={styles.detailsContainer}>
-            <Text style={styles.detailsTitle}>Ride Details</Text>
-            <Text>ID: {selectedRide.id}</Text>
-            <Text>Origin: {selectedRide.origin}</Text>
-            <Text>Destination: {selectedRide.destination}</Text>
-            <Text>Price: {selectedRide.price}</Text>
-            <Text>Status: {selectedRide.status}</Text>
-            <Text>Start Time: {selectedRide.start_time}</Text>
-            <Text>End Time: {selectedRide.end_time}</Text>
+{selectedRide && (
+  <View style={styles.detailsContainer}>
+    <Text style={styles.detailsTitle}>Ride Report</Text>
 
-            <View style={styles.detailsButtons}>
-              <Button title="Close" onPress={handleCloseDetails} />
-              <Button title="Cancel" onPress={handleCancelRide} />
-              <Button title="Complete" onPress={handleCompleteRide} />
-            </View>
-          </View>
-        )}
+    <View style={styles.reportSection}>
+      <Text style={styles.reportLabel}>ID:</Text>
+      <Text style={styles.reportValue}>{selectedRide.id}</Text>
+    </View>
+
+    <View style={styles.reportSection}>
+      <Text style={styles.reportLabel}>Origin:</Text>
+      <Text style={styles.reportValue}>{selectedRide.origin}</Text>
+    </View>
+
+    <View style={styles.reportSection}>
+      <Text style={styles.reportLabel}>Destination:</Text>
+      <Text style={styles.reportValue}>{selectedRide.destination}</Text>
+    </View>
+
+    <View style={styles.reportSection}>
+      <Text style={styles.reportLabel}>Driver:</Text>
+      <Text style={styles.reportValue}>{selectedRide.driver}</Text>
+    </View>
+
+    <View style={styles.reportSection}>
+      <Text style={styles.reportLabel}>Passenger:</Text>
+      <Text style={styles.reportValue}>{selectedRide.passenger}</Text>
+    </View>
+
+    <View style={styles.reportSection}>
+      <Text style={styles.reportLabel}>Price:</Text>
+      <Text style={styles.reportValue}>{selectedRide.price}</Text>
+    </View>
+
+    <View style={styles.reportSection}>
+      <Text style={styles.reportLabel}>Status:</Text>
+      <Text style={styles.reportValue}>{selectedRide.status}</Text>
+    </View>
+
+    <View style={styles.reportSection}>
+      <Text style={styles.reportLabel}>Start Time:</Text>
+      <Text style={styles.reportValue}>{selectedRide.start_time}</Text>
+    </View>
+
+    <View style={styles.reportSection}>
+      <Text style={styles.reportLabel}>End Time:</Text>
+      <Text style={styles.reportValue}>{selectedRide.end_time}</Text>
+    </View>
+
+    <View style={styles.detailsButtons}>
+      <Button title="Close" onPress={handleCloseDetails} />
+      <Button title="Cancel" onPress={handleCancelRide} />
+      <Button title="Complete" onPress={handleCompleteRide} />
+      <Link href="/Pay" style={styles.linkButton}>
+        <Text style={styles.linkButtonText}>Pay</Text>
+      </Link>
+    </View>
+  </View>
+)}
+
       </ScrollView>
       <IconContainer />
     </View>
@@ -319,6 +361,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginTop: 10,
+  },
+  reportSection: {
+    flexDirection: 'row',
+    marginVertical: 8,
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  reportLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#555',
+  },
+  reportValue: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#333',
   },
 });
 
