@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import axios from 'axios';
 
@@ -44,46 +44,52 @@ export default function SignUpScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create an Account</Text>
-      <Text style={styles.subtitle}>Join us and start your journey</Text>
-      {Object.keys(form).map((key) => {
-        if (key === 'is_driver') {
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>Create an Account</Text>
+        <Text style={styles.subtitle}>Join us and start your journey</Text>
+        {Object.keys(form).map((key) => {
+          if (key === 'is_driver') {
+            return (
+              <View key={key} style={styles.switchContainer}>
+                <Text style={styles.switchLabel}>Driver?</Text>
+                <Switch
+                  value={form.is_driver}
+                  onValueChange={(value) => handleInputChange('is_driver', value)}
+                />
+              </View>
+            );
+          }
           return (
-            <View key={key} style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Driver?</Text>
-              <Switch
-                value={form.is_driver}
-                onValueChange={(value) => handleInputChange('is_driver', value)}
-              />
-            </View>
+            <TextInput
+              key={key}
+              placeholder={key.replace('_', ' ')}
+              value={form[key as keyof FormState].toString()}
+              onChangeText={(value) => handleInputChange(key as keyof FormState, value)}
+              style={styles.input}
+              secureTextEntry={key === 'password'}
+            />
           );
-        }
-        return (
-          <TextInput
-            key={key}
-            placeholder={key.replace('_', ' ')}
-            value={form[key as keyof FormState].toString()}
-            onChangeText={(value) => handleInputChange(key as keyof FormState, value)}
-            style={styles.input}
-            secureTextEntry={key === 'password'}
-          />
-        );
-      })}
-      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
-      <Link href="/SignIn" style={styles.link}>
-        Already have an account? <Text style={styles.linkBold}>Sign In</Text>
-      </Link>
-    </View>
+        })}
+        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+          <Text style={styles.buttonText}>Sign Up</Text>
+        </TouchableOpacity>
+        <Link href="/SignIn" style={styles.link}>
+          Already have an account? <Text style={styles.linkBold}>Sign In</Text>
+        </Link>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#f0f4f8' },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 10, color: '#333' },
-  subtitle: { fontSize: 16, marginBottom: 20, color: '#666' },
+  container: { flex: 1, backgroundColor: '#f0f4f8' },
+  contentContainer: { padding: 20 },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 10, color: '#333', textAlign: 'center' },
+  subtitle: { fontSize: 16, marginBottom: 20, color: '#666', textAlign: 'center' },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',

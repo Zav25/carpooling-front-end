@@ -16,6 +16,7 @@ interface Ride {
   status: 'pending' | 'active' | 'completed' | 'canceled'; // Adjust as necessary
   start_time: string; // Adjust based on your API response
   end_time: string; // Adjust based on your API response
+  num_persons: number;
 }
 
 // Define the User interface
@@ -95,6 +96,7 @@ const ProfileScreen: React.FC = () => {
       try {
         await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}/`, {
           status: 'canceled', // Change the status to cancelled
+          price: 0,
         });
         fetchRideHistory(user?.username || ''); // Refresh ride history
         handleCloseDetails(); // Close details view
@@ -107,18 +109,34 @@ const ProfileScreen: React.FC = () => {
   const handleCompleteRide = async () => {
     if (selectedRide) {
       try {
-        const currentTime = new Date().toISOString(); // Get current time in ISO format
+        const currentTime = new Date();
+        const startTime = new Date(selectedRide.start_time);
+        const durationInMinutes = Math.round((currentTime.getTime() - startTime.getTime()) / (1000 * 60)); // Convert milliseconds to minutes
+  
+        let price = selectedRide.num_persons * durationInMinutes * 3;
+
+        price = price > 9999 ? 9999: price;
+
+        console.log(price);
+        
         await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}/`, {
-          status: 'completed', // Change the status to completed
-          end_time: currentTime, // Include the current time as end_time
+          status: 'completed',
+          end_time: currentTime.toISOString(),
+          price: price,
         });
+
+  
         fetchRideHistory(user?.username || ''); // Refresh ride history
         handleCloseDetails(); // Close details view
       } catch (error) {
-        console.error('Failed to complete ride', error);
+        if (axios.isAxiosError(error)) {
+          console.error('Failed to complete ride:', error.response?.data);
+        } else {
+          console.error('An unexpected error occurred:', error);
+        }
       }
     }
-  };
+  };  
 
 
   if (!user) {

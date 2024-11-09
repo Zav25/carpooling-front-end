@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Link } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -46,7 +46,7 @@ export default function UpdateProfileScreen() {
             phone_number: parsedUser.phone_number,
             nid_passport: parsedUser.nid_passport,
             address: parsedUser.address,
-            password: '', // Password should be updated separately for security reasons
+            password: '',
           });
         }
       } catch (error) {
@@ -66,53 +66,68 @@ export default function UpdateProfileScreen() {
       alert('User ID not found');
       return;
     }
-
+  
+    // Create a new object that includes only modified fields
+    const updatedFields: Partial<FormState> = { ...form };
+    if (!updatedFields.password) delete updatedFields.password; // Remove password if not updated
+  
     try {
-      await axios.put(`https://carpooling-be.onrender.com/api/users/${userId}/`, form);
+      await axios.patch(`https://carpooling-be.onrender.com/api/users/${userId}/`, updatedFields);
       alert('Profile updated successfully');
-      // Use router.push('/Profile') if you want programmatic navigation after updating
     } catch (error) {
-      alert('Error updating profile, please try again');
+      if (axios.isAxiosError(error) && error.response) {
+        const errorMessage = error.response.data
+          ? JSON.stringify(error.response.data, null, 2)
+          : 'An unknown error occurred';
+        alert(`Error updating profile:\n${errorMessage}`);
+      } else {
+        alert('Error updating profile, please try again');
+      }
     }
-  };
+  };  
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Update Your Profile</Text>
-      {Object.keys(form).map((key) => {
-        if (key === 'is_driver') {
-          return (
-            <View key={key} style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Driver?</Text>
-              <Switch
-                value={form.is_driver}
-                onValueChange={(value) => handleInputChange('is_driver', value)}
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={styles.scrollView}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Update Your Profile</Text>
+          {Object.keys(form).map((key) => {
+            if (key === 'is_driver') {
+              return (
+                <View key={key} style={styles.switchContainer}>
+                  <Text style={styles.switchLabel}>Driver?</Text>
+                  <Switch
+                    value={form.is_driver}
+                    onValueChange={(value) => handleInputChange('is_driver', value)}
+                  />
+                </View>
+              );
+            }
+            return (
+              <TextInput
+                key={key}
+                placeholder={key.replace('_', ' ')}
+                value={form[key as keyof FormState].toString()}
+                onChangeText={(value) => handleInputChange(key as keyof FormState, value)}
+                style={styles.input}
+                secureTextEntry={key === 'password'}
               />
-            </View>
-          );
-        }
-        return (
-          <TextInput
-            key={key}
-            placeholder={key.replace('_', ' ')}
-            value={form[key as keyof FormState].toString()}
-            onChangeText={(value) => handleInputChange(key as keyof FormState, value)}
-            style={styles.input}
-            secureTextEntry={key === 'password'}
-          />
-        );
-      })}
-      <TouchableOpacity style={styles.button} onPress={handleUpdateProfile}>
-        <Text style={styles.buttonText}>Update Profile</Text>
-      </TouchableOpacity>
-      <Link href="/Profile" style={styles.link}>
-        <Text style={styles.linkText}>Back to Profile</Text>
-      </Link>
-    </View>
+            );
+          })}
+          <TouchableOpacity style={styles.button} onPress={handleUpdateProfile}>
+            <Text style={styles.buttonText}>Update Profile</Text>
+          </TouchableOpacity>
+          <Link href="/Profile" style={styles.link}>
+            <Text style={styles.linkText}>Back to Profile</Text>
+          </Link>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: { flexGrow: 1 },
   container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#f0f4f8' },
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 10, color: '#333' },
   input: {
