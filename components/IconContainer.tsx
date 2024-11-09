@@ -37,6 +37,7 @@ export default function IconContainer() {
           <Image source={require('../assets/images/icons8-combo-chart-100.png')} style={styles.icon} />
         </Link>
       </View>
+      <View style={styles.separator} />
     </View>
   );
 }
@@ -44,7 +45,7 @@ export default function IconContainer() {
 const styles = StyleSheet.create({
   fixedContainer: {
     position: 'relative',
-    bottom: 0,
+    bottom: 10,
     width: '100%',
     backgroundColor: '#fff',
   },
@@ -56,12 +57,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 0,
+    paddingVertical: 0, // No vertical padding to prevent clipping
     paddingHorizontal: 30,
     marginBottom: 20,
   },
   icon: {
-    width: 20,
-    height: 20,
+    width: 30,  // Original size width (you can adjust if needed)
+    height: 30, // Original size height
   },
 });

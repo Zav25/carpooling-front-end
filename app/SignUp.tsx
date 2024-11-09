@@ -38,8 +38,11 @@ export default function SignUpScreen() {
     try {
       await axios.post('https://carpooling-be.onrender.com/api/users/', form);
       router.push('/SignIn');
-    } catch (error) {
-      alert('Error signing up, please try again');
+    } catch (error: any) {
+      // Check if the error has a response with details
+      const errorMessage = error.response?.data;
+      console.log(errorMessage);
+      alert(errorMessage.detail);
     }
   };
 
