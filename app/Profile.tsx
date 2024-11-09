@@ -113,7 +113,7 @@ const ProfileScreen: React.FC = () => {
         const startTime = new Date(selectedRide.start_time);
         const durationInMinutes = Math.round((currentTime.getTime() - startTime.getTime()) / (1000 * 60)); // Convert milliseconds to minutes
   
-        let price = selectedRide.num_persons * durationInMinutes * 3;
+        let price = 50 + selectedRide.num_persons * durationInMinutes * 3;
 
         price = price > 9999 ? 9999: price;
 
