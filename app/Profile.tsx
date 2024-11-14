@@ -1,25 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Button } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Link } from 'expo-router';
-import IconContainer from '../components/IconContainer'; // Import the IconContainer
+import { Link, useRouter } from 'expo-router';
+import IconContainer from '../components/IconContainer';
 import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
 
-// Define the Ride interface
 interface Ride {
-  id: number; // or string, depending on your API response
+  id: number;
   origin: string;
   destination: string;
   driver: string | null;
   passenger: string | null;
-  price: number; // or string, depending on your API response
-  status: 'pending' | 'active' | 'completed' | 'canceled'; // Adjust as necessary
-  start_time: string; // Adjust based on your API response
-  end_time: string; // Adjust based on your API response
+  price: number;
+  status: 'pending' | 'active' | 'completed' | 'canceled';
+  start_time: string;
+  end_time: string;
   num_persons: number;
 }
 
-// Define the User interface
 interface User {
   id: number;
   username: string;
@@ -32,43 +31,38 @@ interface User {
 }
 
 const ProfileScreen: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null); // Use User interface
-  const [pendingRides, setPendingRides] = useState<Ride[]>([]);
-  const [activeRides, setActiveRides] = useState<Ride[]>([]);
-  const [completedRides, setCompletedRides] = useState<Ride[]>([]);
-  const [canceledRides, setCanceledRides] = useState<Ride[]>([]);
-  const [selectedRide, setSelectedRide] = useState<Ride | null>(null); // State for selected ride
+  const [user, setUser] = useState<User | null>(null);
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userData = await AsyncStorage.getItem('user');
-        if (userData) {
-          const parsedUser: User = JSON.parse(userData); // Parse user data
-          setUser(parsedUser);
-          fetchRideHistory(parsedUser.username); // Fetch rides after setting user
-        }
-      } catch (error) {
-        console.error('Failed to load user data', error);
-      }
-    };
-
     fetchUserData();
   }, []);
 
-  const fetchRideHistory = async (username: string) => {
-    if (!username) return; // Prevent fetching if username is not available
+  const fetchUserData = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('user');
+      if (userData) {
+        const parsedUser: User = JSON.parse(userData);
+        setUser(parsedUser);
+        await fetchRideHistory(parsedUser.username);
+      }
+    } catch (error) {
+      console.error('Failed to load user data', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const fetchRideHistory = async (username: string) => {
+    if (!username) return;
     try {
       const response = await axios.get('https://carpooling-be.onrender.com/api/rides/');
-      const rides: Ride[] = response.data;
-
-      const userRides = rides.filter(ride => ride.driver === username || ride.passenger === username);
-
-      setPendingRides(userRides.filter(ride => ride.status === 'pending'));
-      setActiveRides(userRides.filter(ride => ride.status === 'active'));
-      setCompletedRides(userRides.filter(ride => ride.status === 'completed'));
-      setCanceledRides(userRides.filter(ride => ride.status === 'canceled'));
+      const allRides: Ride[] = response.data;
+      const userRides = allRides.filter(ride => ride.driver === username || ride.passenger === username);
+      setRides(userRides);
     } catch (error) {
       console.error('Failed to load ride history', error);
     }
@@ -77,29 +71,29 @@ const ProfileScreen: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await AsyncStorage.removeItem('user');
-      // Navigate to sign-in screen after sign out
+      router.replace('/SignIn');
     } catch (error) {
       console.error('Failed to sign out', error);
     }
   };
 
   const handleRidePress = (ride: Ride) => {
-    setSelectedRide(ride); // Set the selected ride to show its details
+    setSelectedRide(ride);
   };
 
   const handleCloseDetails = () => {
-    setSelectedRide(null); // Close the ride details view
+    setSelectedRide(null);
   };
 
   const handleCancelRide = async () => {
     if (selectedRide) {
       try {
         await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}/`, {
-          status: 'canceled', // Change the status to cancelled
+          status: 'canceled',
           price: 0,
         });
-        fetchRideHistory(user?.username || ''); // Refresh ride history
-        handleCloseDetails(); // Close details view
+        await fetchRideHistory(user?.username || '');
+        handleCloseDetails();
       } catch (error) {
         console.error('Failed to cancel ride', error);
       }
@@ -111,274 +105,310 @@ const ProfileScreen: React.FC = () => {
       try {
         const currentTime = new Date();
         const startTime = new Date(selectedRide.start_time);
-        const durationInMinutes = Math.round((currentTime.getTime() - startTime.getTime()) / (1000 * 60)); // Convert milliseconds to minutes
-  
+        const durationInMinutes = Math.round((currentTime.getTime() - startTime.getTime()) / (1000 * 60));
         let price = 50 + selectedRide.num_persons * durationInMinutes * 3;
-
-        price = price > 9999 ? 9999: price;
-
-        console.log(price);
+        price = Math.min(price, 9999);
         
         await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}/`, {
           status: 'completed',
           end_time: currentTime.toISOString(),
           price: price,
         });
-
-  
-        fetchRideHistory(user?.username || ''); // Refresh ride history
-        handleCloseDetails(); // Close details view
+        await fetchRideHistory(user?.username || '');
+        handleCloseDetails();
       } catch (error) {
-        if (axios.isAxiosError(error)) {
-          console.error('Failed to complete ride:', error.response?.data);
-        } else {
-          console.error('An unexpected error occurred:', error);
-        }
+        console.error('Failed to complete ride:', error);
       }
     }
-  };  
+  };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#E40FA4" />
+      </View>
+    );
+  }
 
   if (!user) {
-    return <Text>Loading...</Text>;
+    return <Text>No user data available</Text>;
   }
 
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Image source={require('../assets/images/icons8-user-100.png')} style={styles.avatar} />
-        <Text style={styles.username}>{user.username}</Text>
-        <Text style={styles.name}>{user.first_name} {user.last_name}</Text>
-        <Text style={styles.email}>Email: {user.email}</Text>
-        <Text style={styles.info}>Phone: {user.phone_number}</Text>
-        <Text style={styles.info}>Address: {user.address}</Text>
-        <Text style={styles.info}>NID/Passport: {user.nid_passport}</Text>
+        <View style={styles.header}>
+          <Image source={require('../assets/images/icons8-user-100.png')} style={styles.avatar} />
+          <Text style={styles.name}>{user.first_name} {user.last_name}</Text>
+          <Text style={styles.username}>@{user.username}</Text>
+        </View>
+
+        <View style={styles.infoContainer}>
+          <InfoItem icon="mail" text={user.email} />
+          <InfoItem icon="call" text={user.phone_number} />
+          <InfoItem icon="location" text={user.address} />
+          <InfoItem icon="card" text={user.nid_passport} />
+        </View>
 
         <View style={styles.buttonRow}>
-          <Link href="/UpdateProfile" style={styles.linkButton}>
-            <Text style={styles.linkButtonText}>Update Profile</Text>
-          </Link>
-          <Link href="/SignIn" onPress={handleSignOut} style={styles.linkButton}>
-            <Text style={styles.linkButtonText}>Logout</Text>
-          </Link>
+          <TouchableOpacity style={styles.button} onPress={() => router.push('/UpdateProfile')}>
+            <Text style={styles.buttonText}>Update Profile</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleSignOut}>
+            <Text style={styles.buttonText}>Logout</Text>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.sectionTitle}>Ride History</Text>
-
-        <Text style={styles.subSectionTitle}>Pending Rides</Text>
-        {pendingRides.map(ride => (
+        {rides.map(ride => (
           <TouchableOpacity key={ride.id} style={styles.rideItem} onPress={() => handleRidePress(ride)}>
-            <Text>ID: {ride.id}</Text>
-            <Text>Origin: {ride.origin}</Text>
-            <Text>Destination: {ride.destination}</Text>
-            <Text>Price: {ride.price}</Text>
+            <View style={styles.rideHeader}>
+              <Text style={styles.rideId}>Ride #{ride.id}</Text>
+              <Text style={[styles.rideStatus, styles[ride.status]]}>{ride.status}</Text>
+            </View>
+            <Text style={styles.rideInfo}>{ride.origin} → {ride.destination}</Text>
+            <Text style={styles.ridePrice}>৳{ride.price}</Text>
           </TouchableOpacity>
         ))}
-
-        <Text style={styles.subSectionTitle}>Active Rides</Text>
-        {activeRides.map(ride => (
-          <TouchableOpacity key={ride.id} style={styles.rideItem} onPress={() => handleRidePress(ride)}>
-            <Text>ID: {ride.id}</Text>
-            <Text>Origin: {ride.origin}</Text>
-            <Text>Destination: {ride.destination}</Text>
-            <Text>Price: {ride.price}</Text>
-          </TouchableOpacity>
-        ))}
-
-        <Text style={styles.subSectionTitle}>Completed Rides</Text>
-        {completedRides.map(ride => (
-          <TouchableOpacity key={ride.id} style={styles.rideItem} onPress={() => handleRidePress(ride)}>
-            <Text>ID: {ride.id}</Text>
-            <Text>Origin: {ride.origin}</Text>
-            <Text>Destination: {ride.destination}</Text>
-            <Text>Price: {ride.price}</Text>
-          </TouchableOpacity>
-        ))}
-
-        <Text style={styles.subSectionTitle}>Canceled Rides</Text>
-        {canceledRides.map(ride => (
-          <TouchableOpacity key={ride.id} style={styles.rideItem} onPress={() => handleRidePress(ride)}>
-            <Text>ID: {ride.id}</Text>
-            <Text>Origin: {ride.origin}</Text>
-            <Text>Destination: {ride.destination}</Text>
-            <Text>Price: {ride.price}</Text>
-          </TouchableOpacity>
-        ))}
-
-{selectedRide && (
-  <View style={styles.detailsContainer}>
-    <Text style={styles.detailsTitle}>Ride Report</Text>
-
-    <View style={styles.reportSection}>
-      <Text style={styles.reportLabel}>ID:</Text>
-      <Text style={styles.reportValue}>{selectedRide.id}</Text>
-    </View>
-
-    <View style={styles.reportSection}>
-      <Text style={styles.reportLabel}>Origin:</Text>
-      <Text style={styles.reportValue}>{selectedRide.origin}</Text>
-    </View>
-
-    <View style={styles.reportSection}>
-      <Text style={styles.reportLabel}>Destination:</Text>
-      <Text style={styles.reportValue}>{selectedRide.destination}</Text>
-    </View>
-
-    <View style={styles.reportSection}>
-      <Text style={styles.reportLabel}>Driver:</Text>
-      <Text style={styles.reportValue}>{selectedRide.driver}</Text>
-    </View>
-
-    <View style={styles.reportSection}>
-      <Text style={styles.reportLabel}>Passenger:</Text>
-      <Text style={styles.reportValue}>{selectedRide.passenger}</Text>
-    </View>
-
-    <View style={styles.reportSection}>
-      <Text style={styles.reportLabel}>Price:</Text>
-      <Text style={styles.reportValue}>{selectedRide.price}</Text>
-    </View>
-
-    <View style={styles.reportSection}>
-      <Text style={styles.reportLabel}>Status:</Text>
-      <Text style={styles.reportValue}>{selectedRide.status}</Text>
-    </View>
-
-    <View style={styles.reportSection}>
-      <Text style={styles.reportLabel}>Start Time:</Text>
-      <Text style={styles.reportValue}>{selectedRide.start_time}</Text>
-    </View>
-
-    <View style={styles.reportSection}>
-      <Text style={styles.reportLabel}>End Time:</Text>
-      <Text style={styles.reportValue}>{selectedRide.end_time}</Text>
-    </View>
-
-    <View style={styles.detailsButtons}>
-      <Button title="Close" onPress={handleCloseDetails} />
-      <Button title="Cancel" onPress={handleCancelRide} />
-      <Button title="Complete" onPress={handleCompleteRide} />
-      <Link href="/Pay" style={styles.linkButton}>
-        <Text style={styles.linkButtonText}>Pay</Text>
-      </Link>
-    </View>
-  </View>
-)}
-
       </ScrollView>
+
+      {selectedRide && (
+        <View style={styles.overlay}>
+          <View style={styles.detailsContainer}>
+            <Text style={styles.detailsTitle}>Ride Details</Text>
+            <ScrollView style={styles.detailsScroll}>
+              <DetailItem label="ID" value={selectedRide.id.toString()} />
+              <DetailItem label="Origin" value={selectedRide.origin} />
+              <DetailItem label="Destination" value={selectedRide.destination} />
+              <DetailItem label="Driver" value={selectedRide.driver || 'N/A'} />
+              <DetailItem label="Passenger" value={selectedRide.passenger || 'N/A'} />
+              <DetailItem label="Price" value={`৳${selectedRide.price}`} />
+              <DetailItem label="Status" value={selectedRide.status} />
+              <DetailItem label="Start Time" value={new Date(selectedRide.start_time).toLocaleString()} />
+              <DetailItem label="End Time" value={selectedRide.end_time ? new Date(selectedRide.end_time).toLocaleString() : 'N/A'} />
+            </ScrollView>
+            <View style={styles.detailsButtons}>
+              <TouchableOpacity style={styles.detailButton} onPress={handleCloseDetails}>
+                <Text style={styles.detailButtonText}>Close</Text>
+              </TouchableOpacity>
+              {selectedRide.status === 'pending' && (
+                <TouchableOpacity style={[styles.detailButton, styles.cancelButton]} onPress={handleCancelRide}>
+                  <Text style={styles.detailButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              )}
+              {selectedRide.status === 'active' && (
+                <TouchableOpacity style={[styles.detailButton, styles.completeButton]} onPress={handleCompleteRide}>
+                  <Text style={styles.detailButtonText}>Complete</Text>
+                </TouchableOpacity>
+              )}
+              {selectedRide.status === 'completed' && (
+                <Link href="/Pay" asChild>
+                  <TouchableOpacity style={[styles.detailButton, styles.payButton]}>
+                    <Text style={styles.detailButtonText}>Pay</Text>
+                  </TouchableOpacity>
+                </Link>
+              )}
+            </View>
+          </View>
+        </View>
+      )}
+
       <IconContainer />
     </View>
   );
 };
 
+const InfoItem: React.FC<{ icon: string; text: string }> = ({ icon, text }) => (
+  <View style={styles.infoItem}>
+    <Ionicons name={icon as any} size={24} color="#E40FA4" style={styles.infoIcon} />
+    <Text style={styles.infoText}>{text}</Text>
+  </View>
+);
+
+const DetailItem: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <View style={styles.detailItem}>
+    <Text style={styles.detailLabel}>{label}:</Text>
+    <Text style={styles.detailValue}>{value}</Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#F0F0F0',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   container: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 20,
-  },
-  username: {
-    fontSize: 14,
-    marginBottom: 20,
-    color: 'rgb(228, 15, 164)',
+    marginBottom: 10,
   },
   name: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
     color: '#333',
   },
-  email: {
+  username: {
     fontSize: 16,
-    marginBottom: 5,
-    color: '#555',
+    color: '#E40FA4',
+    marginTop: 5,
   },
-  info: {
+  infoContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  infoIcon: {
+    marginRight: 10,
+  },
+  infoText: {
     fontSize: 16,
-    marginBottom: 5,
-    color: '#777',
+    color: '#333',
   },
   buttonRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginVertical: 10,
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
-  linkButton: {
-    padding: 10,
-    backgroundColor: 'rgb(228, 15, 164)',
-    borderRadius: 5,
+  button: {
+    flex: 1,
+    backgroundColor: '#E40FA4',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 5,
   },
-  linkButtonText: {
-    color: '#fff',
+  logoutButton: {
+    backgroundColor: '#FF3B30',
+  },
+  buttonText: {
+    color: '#FFFFFF',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 20,
-  },
-  subSectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 15,
-  },
-  rideItem: {
-    backgroundColor: '#fff',
-    padding: 10,
-    marginVertical: 5,
-    borderRadius: 5,
-    elevation: 2,
-    width: '100%',
-  },
-  detailsContainer: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 5,
-    elevation: 4,
-    position: 'absolute',
-    top: '20%',
-    left: '5%',
-    right: '5%',
-  },
-  detailsTitle: {
     fontSize: 22,
     fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
+  },
+  rideItem: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 15,
     marginBottom: 10,
+  },
+  rideHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  rideId: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  rideStatus: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+  },
+  pending: { color: '#F0AD4E' },
+  active: { color: '#5BC0DE' },
+  completed: { color: '#5CB85C' },
+  canceled: { color: '#D9534F' },
+  rideInfo: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 5,
+  },
+  ridePrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#E40FA4',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  detailsContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  detailsTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
+    textAlign: 'center',
+  },
+  detailsScroll: {
+    marginBottom: 15,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    paddingBottom: 5,
+  },
+  detailLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  detailValue: {
+    fontSize: 16,
+    color: '#333',
   },
   detailsButtons: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 10,
   },
-  reportSection: {
-    flexDirection: 'row',
-    marginVertical: 8,
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+  detailButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    backgroundColor: '#E40FA4',
   },
-  reportLabel: {
+  cancelButton: {
+    backgroundColor: '#FF3B30',
+  },
+  completeButton: {
+    backgroundColor: '#4CD964',
+  },
+  payButton: {
+    backgroundColor: '#007AFF',
+  },
+  detailButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
     fontSize: 16,
-    fontWeight: '600',
-    color: '#555',
-  },
-  reportValue: {
-    fontSize: 16,
-    fontWeight: '400',
-    color: '#333',
   },
 });
 
