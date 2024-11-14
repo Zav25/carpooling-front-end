@@ -45,7 +45,7 @@ export default function IconContainer() {
 const styles = StyleSheet.create({
   fixedContainer: {
     position: 'relative',
-    bottom: 10,
+    bottom: -10,
     width: '100%',
     backgroundColor: '#fff',
   },
