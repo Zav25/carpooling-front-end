@@ -116,6 +116,8 @@ const ProfileScreen: React.FC = () => {
         });
         await fetchRideHistory(user?.username || '');
         handleCloseDetails();
+
+        router.replace('/Pay');
       } catch (error) {
         console.error('Failed to complete ride:', error);
       }
