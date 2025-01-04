@@ -72,7 +72,7 @@ export default function UpdateProfileScreen() {
     if (!updatedFields.password) delete updatedFields.password; // Remove password if not updated
   
     try {
-      await axios.patch(`https://carpooling-be.onrender.com/api/users/${userId}/`, updatedFields);
+      await axios.patch(`https://carpooling-be-h414.onrender.com/api/users/${userId}/`, updatedFields);
       alert('Profile updated successfully');
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {

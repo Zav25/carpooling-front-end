@@ -36,7 +36,7 @@ export default function SignUpScreen() {
 
   const handleSignUp = async () => {
     try {
-      await axios.post('https://carpooling-be.onrender.com/api/users/', form);
+      await axios.post('https://carpooling-be-h414.onrender.com/api/users/', form);
       router.push('/SignIn');
     } catch (error: any) {
       // Check if the error has a response with details

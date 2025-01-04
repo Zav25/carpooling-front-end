@@ -30,7 +30,7 @@ export default function RequestRideScreen() {
         num_persons: Number(numPersons),
       };
 
-      await axios.post('https://carpooling-be.onrender.com/api/rides/', rideRequest);
+      await axios.post('https://carpooling-be-h414.onrender.com/api/rides/', rideRequest);
       Alert.alert('Success', 'Ride requested successfully');
       setOrigin('');
       setDestination('');

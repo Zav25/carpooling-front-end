@@ -35,7 +35,7 @@ export default function PendingRides() {
   }, []);
 
   useEffect(() => {
-    axios.get('https://carpooling-be.onrender.com/api/rides/')
+    axios.get('https://carpooling-be-h414.onrender.com/api/rides/')
       .then(response => {
         const pendingRides = response.data.filter((ride: Ride) => ride.status === 'pending');
         setRides(pendingRides);
@@ -52,7 +52,7 @@ export default function PendingRides() {
     }
 
     const currentTime = new Date().toISOString();
-    axios.patch(`https://carpooling-be.onrender.com/api/rides/${rideId}/`, { 
+    axios.patch(`https://carpooling-be-h414.onrender.com/api/rides/${rideId}/`, { 
       status: 'active', 
       driver: username, 
       start_time: currentTime 

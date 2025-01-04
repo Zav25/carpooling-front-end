@@ -33,7 +33,7 @@ export default function PostRide() {
       };
 
       // Make the API call to create a new ride
-      await axios.post('https://carpooling-be.onrender.com/api/rides/', newRide);
+      await axios.post('https://carpooling-be-h414.onrender.com/api/rides/', newRide);
       Alert.alert('Success', 'Ride posted successfully');
       // Optionally reset form fields
       setOrigin('');

@@ -59,7 +59,7 @@ const ProfileScreen: React.FC = () => {
   const fetchRideHistory = async (username: string) => {
     if (!username) return;
     try {
-      const response = await axios.get('https://carpooling-be.onrender.com/api/rides/');
+      const response = await axios.get('https://carpooling-be-h414.onrender.com/api/rides/');
       const allRides: Ride[] = response.data;
       const userRides = allRides.filter(ride => ride.driver === username || ride.passenger === username);
       setRides(userRides);
@@ -88,7 +88,7 @@ const ProfileScreen: React.FC = () => {
   const handleCancelRide = async () => {
     if (selectedRide) {
       try {
-        await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}/`, {
+        await axios.patch(`https://carpooling-be-h414.onrender.com/api/rides/${selectedRide.id}/`, {
           status: 'canceled',
           price: 0,
         });
@@ -109,7 +109,7 @@ const ProfileScreen: React.FC = () => {
         let price = 50 + selectedRide.num_persons * durationInMinutes * 3;
         price = Math.min(price, 9999);
         
-        await axios.patch(`https://carpooling-be.onrender.com/api/rides/${selectedRide.id}/`, {
+        await axios.patch(`https://carpooling-be-h414.onrender.com/api/rides/${selectedRide.id}/`, {
           status: 'completed',
           end_time: currentTime.toISOString(),
           price: price,
