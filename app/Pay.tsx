@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Link } from 'expo-router';
+
+// Add image imports
+const paymentIcons = {
+  card: require('../assets/images/card.jpg'),
+  bkash: require('../assets/images/bkash.jpg'),
+  nagad: require('../assets/images/nagad.jpg'),
+  cash: require('../assets/images/cash.jpg'),
+};
 
 const Pay = () => {
   const [paymentMethod, setPaymentMethod] = useState('card');
 
-  const PaymentMethodButton = ({ method, icon, label }) => (
+  const PaymentMethodButton = ({ method, label }) => (
     <TouchableOpacity
       style={[
         styles.methodButton,
@@ -13,7 +22,10 @@ const Pay = () => {
       ]}
       onPress={() => setPaymentMethod(method)}
     >
-      <Ionicons name={icon} size={24} color={paymentMethod === method ? '#fff' : '#333'} />
+      <Image 
+        source={paymentIcons[method]}
+        style={styles.methodIcon}
+      />
       <Text style={[
         styles.methodButtonText,
         paymentMethod === method && styles.selectedMethodButtonText
@@ -72,37 +84,49 @@ const Pay = () => {
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Payment Details</Text>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.mainContainer}
+    >
+      <ScrollView 
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>Payment Details</Text>
 
-      <View style={styles.detailsContainer}>
-        <DetailItem label="Ride ID" value="12345" />
-        <DetailItem label="Origin" value="Downtown" />
-        <DetailItem label="Destination" value="Uptown" />
-        <DetailItem label="Price" value="৳250.00" />
-      </View>
+        <View style={styles.detailsContainer}>
+          <DetailItem label="Ride ID" value="12345" />
+          <DetailItem label="Origin" value="Downtown" />
+          <DetailItem label="Destination" value="Uptown" />
+          <DetailItem label="Price" value="৳250.00" />
+        </View>
 
-      <Text style={styles.sectionTitle}>Select Payment Method</Text>
-      <View style={styles.methodsContainer}>
-        <PaymentMethodButton method="card" icon="card-outline" label="Card" />
-        <PaymentMethodButton method="bkash" icon="phone-portrait-outline" label="bKash" />
-        <PaymentMethodButton method="nagad" icon="phone-portrait-outline" label="Nagad" />
-        <PaymentMethodButton method="cash" icon="cash-outline" label="Cash" />
-      </View>
+        <Text style={styles.sectionTitle}>Select Payment Method</Text>
+        <View style={styles.methodsContainer}>
+          <PaymentMethodButton method="card" label="Card" />
+          <PaymentMethodButton method="bkash" label="bKash" />
+          <PaymentMethodButton method="nagad" label="Nagad" />
+          <PaymentMethodButton method="cash" label="Cash" />
+        </View>
 
-      {paymentMethod === 'card' && <CardForm />}
-      {paymentMethod === 'bkash' && <MobilePaymentForm provider="bKash" />}
-      {paymentMethod === 'nagad' && <MobilePaymentForm provider="Nagad" />}
-      {paymentMethod === 'cash' && <CashForm />}
+        {paymentMethod === 'card' && <CardForm />}
+        {paymentMethod === 'bkash' && <MobilePaymentForm provider="bKash" />}
+        {paymentMethod === 'nagad' && <MobilePaymentForm provider="Nagad" />}
+        {paymentMethod === 'cash' && <CashForm />}
 
-      <TouchableOpacity style={styles.payButton}>
-        <Text style={styles.payButtonText}>Pay Now</Text>
-      </TouchableOpacity>
+        <Link href="/Profile" style={styles.payButton} asChild>
+          <TouchableOpacity>
+            <Text style={styles.payButtonText}>Pay Now</Text>
+          </TouchableOpacity>
+        </Link>
 
-      <TouchableOpacity style={styles.cancelButton}>
-        <Text style={styles.cancelButtonText}>Cancel</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity style={styles.cancelButton}>
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -114,10 +138,16 @@ const DetailItem = ({ label, value }) => (
 );
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#f7f7f7',
+  },
   container: {
     flex: 1,
+  },
+  contentContainer: {
     padding: 20,
-    backgroundColor: '#f7f7f7',
+    paddingBottom: 40,
   },
   title: {
     fontSize: 28,
@@ -205,13 +235,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
     paddingVertical: 15,
     borderRadius: 8,
-    alignItems: 'center',
     marginBottom: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   payButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   cancelButton: {
     backgroundColor: '#f44336',
@@ -237,6 +269,11 @@ const styles = StyleSheet.create({
     color: '#333',
     marginTop: 10,
     textAlign: 'center',
+  },
+  methodIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
 });
 

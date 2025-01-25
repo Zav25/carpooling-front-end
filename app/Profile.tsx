@@ -28,6 +28,7 @@ interface User {
   phone_number: string;
   address: string;
   nid_passport: string;
+  is_driver: boolean;
 }
 
 const ProfileScreen: React.FC = () => {
@@ -117,7 +118,10 @@ const ProfileScreen: React.FC = () => {
         await fetchRideHistory(user?.username || '');
         handleCloseDetails();
 
-        router.replace('/Pay');
+      
+        if(!user?.is_driver){
+          router.replace('/Pay');     
+        }
       } catch (error) {
         console.error('Failed to complete ride:', error);
       }
